@@ -31,7 +31,7 @@ func (r *ToysPostgres) CreateToysRepo(userId int, toys model.Toys) (int, error) 
 		return 0, err
 	}
 
-	createUsersToysQuery := fmt.Sprintf("INSERT INTO %s (user_id, toys_id) VALUES ($1, $2)", userstoystable)
+	createUsersToysQuery := fmt.Sprintf("INSERT INTO %s (users_id, toys_id) VALUES ($1, $2)", userstoystable)
 	_, err = tx.Exec(createUsersToysQuery, userId, id)
 	if err != nil {
 		tx.Rollback()
@@ -44,7 +44,7 @@ func (r *ToysPostgres) CreateToysRepo(userId int, toys model.Toys) (int, error) 
 func (r *ToysPostgres) GetAllToysRepo(userId int) ([]model.Toys, error) {
 	var toys []model.Toys
 
-	query := fmt.Sprintf("SELECT toys.id, toys.person, toys.movie FROM %s toys INNER JOIN %s userstoys on toys.id = userstoys.toys_id WHERE userstoys.user_id = $1",
+	query := fmt.Sprintf("SELECT toys.id, toys.person, toys.movie FROM %s toys INNER JOIN %s users_toys on toys.id = users_toys.toys_id WHERE users_toys.users_id = $1",
 		toystable, userstoystable)
 	err := r.db.Conn.Select(&toys, query, userId)
 
@@ -55,7 +55,7 @@ func (r *ToysPostgres) GetByIdToysRepo(userId, toysId int) (model.Toys, error) {
 	var toys model.Toys
 
 	query := fmt.Sprintf(`SELECT toys.id, toys.person, toys.movie FROM %s toys
-								INNER JOIN %s userstoys on toys.id = userstoys.toys_id WHERE userstoys.user_id = $1 AND userstoys.list_id = $2`,
+								INNER JOIN %s users_toys on toys.id = users_toys.toys_id WHERE users_toys.users_id = $1 AND users_toys.toys_id = $2`,
 		toystable, userstoystable)
 	err := r.db.Conn.Get(&toys, query, userId, toysId)
 
@@ -63,7 +63,7 @@ func (r *ToysPostgres) GetByIdToysRepo(userId, toysId int) (model.Toys, error) {
 }
 
 func (r *ToysPostgres) DeleteToysRepo(userId, toysId int) error {
-	query := fmt.Sprintf("DELETE FROM %s toys USING %s userstoys WHERE toys.id = userstoys.toys_id AND userstoys.user_id=$1 AND userstoys.toys_id=$2",
+	query := fmt.Sprintf("DELETE FROM %s tl USING %s ul WHERE tl.id = ul.toys_id AND ul.users_id=$1 AND ul.toys_id=$2",
 		toystable, userstoystable)
 	_, err := r.db.Conn.Exec(query, userId, toysId)
 
@@ -92,7 +92,7 @@ func (r *ToysPostgres) UpdateToysRepo(userId, toysId int, input model.UpdateToys
 	// title=$1, description=$2
 	setQuery := strings.Join(setValues, ", ")
 
-	query := fmt.Sprintf("UPDATE %s toys SET %s FROM %s userstoys WHERE toys.id = userstoys.toys_id AND usertoys.toys_id=$%d AND userstoys.user_id=$%d",
+	query := fmt.Sprintf("UPDATE %s toys SET %s FROM %s users_toys WHERE toys.id = users_toys.toys_id AND users_toys.toys_id=$%d AND users_toys.users_id=$%d",
 		toystable, setQuery, userstoystable, argId, argId+1)
 	args = append(args, toysId, userId)
 

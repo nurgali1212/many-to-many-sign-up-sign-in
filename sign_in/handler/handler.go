@@ -3,8 +3,6 @@ package handler
 import (
 	"sign_in/service"
 
-
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -19,31 +17,39 @@ func NewHandler(service *service.Service) *Handler {
 func (h *Handler) SetupRouter() *gin.Engine {
 	router := gin.New()
 
-
-
 	auth := router.Group("/auth")
 	{
 		auth.POST("/sign-up", h.signUp)
 		auth.POST("/sign-in", h.signIn)
 	}
-	toys := router.Group("/")
+	api := router.Group("/api", h.userIdentity)
 	{
-		toys.POST("toys", h.createToysHandler)
-		toys.GET("toys", h.getAllToysHandler)
-		toys.GET("toys/:id", h.getListByIdToysHandler)
-		toys.DELETE("toys/:id", h.deleteToysHandler)
-		toys.PUT("toys/:id", h.updateToysHandler)
-	}
-	category := router.Group("/")
-	{
-		category.POST("category", h.createCategoryHandler)
-		category.GET("category", h.getAllCategoryHanlder)
-		category.GET("category/:id", h.getListByIdToysHandler)
-		category.DELETE("category/:id", h.deleteCategoryHandler)
-		category.PUT("category/:id", h.updateCategoryHandler)
-	}
+		toys := api.Group("/toys")
+		{
+			toys.POST("/", h.createToysHandler)
+			toys.GET("/", h.getAllToysHandler)
+			toys.GET("/:id", h.getListByIdToysHandler)
+			toys.DELETE("/:id", h.deleteToysHandler)
+			toys.PUT("/:id", h.updateToysHandler)
 
+
+			category := toys.Group("/:id/category")
+			{
+				category.POST("/", h.createCategoryHandler)
+				category.GET("/", h.getAllCategoryHanlder)
+
+			}
+
+		}
+		category := api.Group("/category")
+		{
+
+			category.GET("/:id", h.getCategoryByIdHandler)
+			category.DELETE("/:id", h.deleteCategoryHandler)
+			category.PUT("/:id", h.updateCategoryHandler)
+		}
+
+	}
 
 	return router
 }
-

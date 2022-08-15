@@ -43,8 +43,8 @@ func (r *CategoryPostgres) CreateCategoryRepo(toysId int, category model.Categor
 
 func (r *CategoryPostgres) GetAllCategoryRepo(userId, toysId int) ([]model.Category, error) {
 	var category []model.Category
-	query := fmt.Sprintf(`SELECT category.id, category.genre, category.done FROM %s category INNER JOIN %s toyscategory on toyscategory.category_id = category.id
-									INNER JOIN %s userstoys on userstoys.toys_id = toyscategory.toys_id WHERE toyscategory.toys_id = $1 AND userstoys.user_id = $2`,
+	query := fmt.Sprintf(`SELECT category.id, category.genre FROM %s category INNER JOIN %s toys_category on toys_category.category_id = category.id
+									INNER JOIN %s users_toys on users_toys.toys_id = toys_category.toys_id WHERE toys_category.toys_id = $1 AND users_toys.users_id = $2`,
 		categorytable, toyscategorytable, userstoystable)
 	if err := r.db.Conn.Select(&category, query, toysId, userId); err != nil {
 		return nil, err
@@ -53,10 +53,12 @@ func (r *CategoryPostgres) GetAllCategoryRepo(userId, toysId int) ([]model.Categ
 	return category, nil
 }
 
+
+
 func (r *CategoryPostgres) GetByIdCategoryRepo(userId, categoryId int) (model.Category, error) {
 	var category model.Category
-	query := fmt.Sprintf(`SELECT category.id, category.genre, category.done FROM %s category INNER JOIN %s toyscategory on toyscategory.category_id = category.id
-									INNER JOIN %s userstoys on userstoys.toys_id = toyscategory.toys_id WHERE category.id = $1 AND userstoys.user_id = $2`,
+	query := fmt.Sprintf(`SELECT category.id, category.genre  FROM %s category INNER JOIN %s toys_category on toys_category.category_id = category.id
+									INNER JOIN %s users_toys on users_toys.toys_id = toys_category.toys_id WHERE category.id = $1 AND users_toys.users_id = $2`,
 		categorytable, toyscategorytable, userstoystable)
 	if err := r.db.Conn.Get(&category, query, categoryId, userId); err != nil {
 		return category, err
@@ -66,8 +68,8 @@ func (r *CategoryPostgres) GetByIdCategoryRepo(userId, categoryId int) (model.Ca
 }
 
 func (r *CategoryPostgres) DeleteCategoryRepo(userId, categoryId int) error {
-	query := fmt.Sprintf(`DELETE FROM %s category USING %s toyscategory, %s userstoys 
-									WHERE category.id = toyscategory.category_id AND toyscategory.toys_id = userstoys.toys_id AND userstoys.user_id = $1 AND toyscategory.id = $2`,
+	query := fmt.Sprintf(`DELETE FROM %s category USING %s toys_category, %s users_toys 
+									WHERE category.id = toys_category.category_id AND toys_category.toys_id = users_toys.toys_id AND users_toys.users_id = $1 AND toys_category.id = $2`,
 		categorytable, toyscategorytable, userstoystable)
 	_, err := r.db.Conn.Exec(query, userId, categoryId)
 	return err
@@ -86,8 +88,8 @@ func (r *CategoryPostgres) UpdateCategoryRepo(userId, categoryId int, input mode
 
 	setQuery := strings.Join(setValues, ", ")
 
-	query := fmt.Sprintf(`UPDATE %s category SET %s FROM %s toyscategory, %s userstoys
-									WHERE category.id = category.category_id AND toyscategory.toys_id = userstoys.toys_id AND userstoys.user_id = $%d AND category.id = $%d`,
+	query := fmt.Sprintf(`UPDATE %s category SET %s FROM %s toys_category, %s users_toys
+									WHERE category.id = toys_category.category_id AND toys_category.toys_id = users_toys.toys_id AND users_toys.users_id = $%d AND category.id = $%d`,
 		categorytable, setQuery, toyscategorytable, userstoystable, argId, argId+1)
 	args = append(args, userId, categoryId)
 
